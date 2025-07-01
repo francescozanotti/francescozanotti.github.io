@@ -1,6 +1,5 @@
 import './style.css'
 import * as THREE from 'three'
-import { GLTFLoader } from 'three/examples/jsm/loaders/GLTFLoader.js'
 import * as dat from 'lil-gui'
 import gsap from 'gsap'
 
@@ -16,11 +15,8 @@ const parameters = {
 gui
     .addColor(parameters, 'materialColor')
     .onChange(() => {
-        // Update all toon materials
-        toonMaterials.forEach(mat => {
-            mat.color.set(parameters.materialColor);
-        });
-        particlesMaterial.color.set(parameters.materialColor);
+        material.color.set(parameters.materialColor)
+        particlesMaterial.color.set(parameters.materialColor)
     })
 
 /**
@@ -40,84 +36,38 @@ const textureLoader = new THREE.TextureLoader()
 const gradientTexture = textureLoader.load('textures/gradients/3.jpg')
 gradientTexture.magFilter = THREE.NearestFilter
 
-// Array to store all toon materials for dynamic updates
-const toonMaterials = [];
-
-// Function to create a new toon material with the current settings
-function createToonMaterial(color) {
-    const material = new THREE.MeshToonMaterial({
-        color: color || parameters.materialColor,
-        gradientMap: gradientTexture
-    });
-    toonMaterials.push(material);
-    return material;
-}
-
-// Initial material
-const material = createToonMaterial(parameters.materialColor);
+// Material
+const material = new THREE.MeshToonMaterial({
+    color: parameters.materialColor,
+    gradientMap: gradientTexture
+})
 
 // Meshes
 const objectsDistance = 4
-let mesh1, mesh2, mesh3;
-const sectionMeshes = [];
+const mesh1 = new THREE.Mesh(
+    new THREE.TorusGeometry(1, 0.4, 16, 20),
+    material
+)
+const mesh2 = new THREE.Mesh(
+    new THREE.ConeGeometry(1, 2, 32),
+    material
+)
+const mesh3 = new THREE.Mesh(
+    new THREE.TorusKnotGeometry(0.8, 0.35, 100, 16),
+    material
+)
 
-// Create a function to handle model loading and material replacement
-async function loadModel(url, positionY, positionX) {
-    // Load the model
-    const gltfLoader = new GLTFLoader();
-    const gltf = await new Promise((resolve, reject) => {
-        gltfLoader.load(
-            url,
-            (gltf) => resolve(gltf),
-            undefined,
-            (error) => reject(error)
-        );
-    });
-    
-    // Get the first mesh from the loaded model
-    const model = gltf.scene.children[0];
-    
-    // Replace all materials in the model with our toon material
-    model.traverse((child) => {
-        if (child.isMesh) {
-            // Create a new material that uses our toon shader
-            const modelMaterial = createToonMaterial(parameters.materialColor);
-            child.material = modelMaterial;
-        }
-    });
-    
-    // Position the model
-    model.position.y = -objectsDistance * positionY;
-    model.position.x = positionX;
-    
-    // Scale if needed (adjust based on your models)
-    model.scale.set(1, 1, 1);
-    
-    // Add to scene
-    scene.add(model);
-    
-    return model;
-}
+mesh1.position.y = - objectsDistance * 0
+mesh2.position.y = - objectsDistance * 1
+mesh3.position.y = - objectsDistance * 2
 
-// Import models
-import model1Url from './assets/models/1.glb?url';
-import model2Url from './assets/models/2.glb?url';
-import model3Url from './assets/models/3.glb?url';
+mesh1.position.x = 2
+mesh2.position.x = -2
+mesh3.position.x = 2
 
-// Load all models
-Promise.all([
-    loadModel(model1Url, 0, 2),
-    loadModel(model2Url, 1, -2),
-    loadModel(model3Url, 2, 2)
-]).then((models) => {
-    [mesh1, mesh2, mesh3] = models;
-    sectionMeshes.push(mesh1, mesh2, mesh3);
-    
-    // Start animation loop after models are loaded
-    tick();
-}).catch((error) => {
-    console.error('Error loading models:', error);
-});
+scene.add(mesh1, mesh2, mesh3)
+
+const sectionMeshes = [mesh1, mesh2, mesh3]
 
 /**
  * Particles
